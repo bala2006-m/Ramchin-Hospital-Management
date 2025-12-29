@@ -8,13 +8,8 @@ import '../Page/GynPage.dart';
 import '../Page/X-RayPage.dart';
 import '../Queue/GynQueuePage.dart';
 
-class GynPage extends StatefulWidget {
-  final Map<String, dynamic> record;
-  final int mode;
-  // final Function(bool) onRefresh;
-
-  const GynPage({Key? key, required this.record, required this.mode})
-    : super(key: key);
+class GynQueuePage extends StatefulWidget {
+  const GynQueuePage({super.key});
 
   @override
   _GynQueuePageState createState() => _GynQueuePageState();
@@ -23,72 +18,34 @@ class GynPage extends StatefulWidget {
 class _GynQueuePageState extends State<GynQueuePage> {
   late Future<List<dynamic>> futureXRayQueue;
   final Color primaryColor = const Color(0xFFBF955E);
-  bool _isPatientExpanded = false;
-  bool _isXrayExpanded = false;
-  bool _isLoading = false; // <-- Add this to your State class
-  String? _dateTime;
-  // File? _pickedImage;
-  List<File> _pickedImages = [];
-  Map<String, TextEditingController> noteControllers = {};
-  bool _isCompleted = false;
-  String? logo;
-  late Map<String, dynamic> _currentRecord;
-
-  late final AnimationController _patientController;
-  late final Animation<double> _patientExpandAnimation;
-
-  final TextEditingController _descriptionController = TextEditingController();
+  int _currentIndex = 0; // Bottom tab index
 
   @override
   void initState() {
     super.initState();
-    _updateTime();
-    _currentRecord = Map<String, dynamic>.from(widget.record);
-    _patientController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
 
-    _patientExpandAnimation = CurvedAnimation(
-      parent: _patientController,
-      curve: Curves.easeInOut,
-    );
-    _loadHospitalLogo();
-  }
-
-  @override
-  void dispose() {
-    _patientController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  void _loadHospitalLogo() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    logo = prefs.getString('hospitalPhoto');
-    setState(() {});
-  }
-
-  void _updateTime() {
-    setState(() {
-      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    xrayRefreshNotifier.addListener(() {
+      if (xrayRefreshNotifier.value == true) {
+        setState(() {
+          futureXRayQueue = TestingScanningService().getAllTestingAndScanning(
+            'GYN',
+          );
+        });
+        xrayRefreshNotifier.value = false;
+      }
     });
+
+    futureXRayQueue = TestingScanningService().getAllTestingAndScanning('GYN');
   }
 
-  void _togglePatientExpand() {
-    setState(() {
-      _isPatientExpanded = !_isPatientExpanded;
-      _isPatientExpanded
-          ? _patientController.forward()
-          : _patientController.reverse();
-    });
-  }
-
-  void _toggleXrayExpand() {
-    setState(() {
-      _isXrayExpanded = !_isXrayExpanded;
-    });
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return "N/A";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy, hh:mm a').format(date);
+    } catch (_) {
+      return dateStr;
+    }
   }
 
   String _formatDob(String? dob) {
@@ -117,208 +74,30 @@ class _GynQueuePageState extends State<GynQueuePage> {
     }
   }
 
-  Map<String, String> resultMap = {};
-
-  void _handleSubmit() async {
-    noteControllers.forEach((key, controller) {
-      resultMap[key] = controller.text.trim();
-    });
-    bool hasEmpty = resultMap.values.any((v) => v.isEmpty);
-    if (_pickedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("At least one image is required."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    if (hasEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Please fill all GYN values."),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    final description = _descriptionController.text.trim();
-
-    if (description.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a description before submitting.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true); // <-- Start loading
-
-    try {
-      final Id = widget.record['id'];
-      final prefs = await SharedPreferences.getInstance();
-      final Staff_Id = prefs.getString('userId');
-      final patient = widget.record['Patient'] ?? {};
-      final consultationList = patient['Consultation'] ?? [];
-
-      // 🧾 Update Testing and Scanning record
-      await TestingScanningService().updateScanning(Id, {
-        'result': description,
-        // 'status': 'COMPLETED',
-        'updatedAt': _dateTime.toString(),
-        'staff_Id': Staff_Id.toString(),
-        'selectedOptionResults': resultMap,
-      }, _pickedImages);
-      // widget.onRefresh(true);
-      // // 🧾 Update Consultation record
-      // if (consultationId != null) {
-      //   await ConsultationService().updateConsultation(consultationId, {
-      //     'status': 'ENDPROCESSING',
-      //     'scanningTesting': false,
-      //     'updatedAt': _dateTime.toString(),
-      //   });
-      // }
-      await TestingScanningService().updateTesting(Id, {
-        'queueStatus': 'COMPLETED',
-      });
-
-      // ✅ Show success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('GYN marked as Completed ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-
-      // await widget.onRefresh(true);
-      // ✅ Update the current record
-      // xrayRefreshNotifier.value = true;
-      Navigator.pop(context, true);
-
-      setState(() {
-        _isCompleted = true;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
-    } finally {
-      setState(() => _isLoading = false); // <-- Stop loading
+  Color _genderColor(String gender) {
+    switch (gender.toLowerCase()) {
+      case 'male':
+        return Colors.lightBlue.shade400;
+      case 'female':
+        return Colors.pink.shade300;
+      default:
+        return Colors.orange.shade400;
     }
   }
 
-  void handelSubmitReport() async {
-    try {
-      setState(() => _isLoading = true);
-      final consultationId = (widget.record.isNotEmpty)
-          ? widget.record['consulateId']
-          : null;
-
-      final Id = widget.record['id'];
-      // 🧾 Update Testing and Scanning record
-      await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
-
-      // 🧾 Update Consultation record
-      if (consultationId != null) {
-        await ConsultationService().updateConsultation(consultationId, {
-          'status': 'ENDPROCESSING',
-          'scanningTesting': false,
-          'updatedAt': _dateTime.toString(),
-        });
-      }
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('GYN Report Submitted ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-      Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$e Error: failed to submit GYN Report'),
-          backgroundColor: primaryColor,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+  IconData _genderIcon(String gender) {
+    switch (gender.toLowerCase()) {
+      case 'male':
+        return Icons.male;
+      case 'female':
+        return Icons.female;
+      default:
+        return Icons.transgender;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final record = widget.record;
-    final patient = record['Patient'] ?? {};
-    // final phone = patient['phone']?['mobile'] ?? 'N/A';
-    String phone;
-
-    final phoneData = patient['phone'];
-
-    if (phoneData == null) {
-      phone = 'N/A';
-    } else if (phoneData is String) {
-      phone = phoneData;
-    } else if (phoneData is Map) {
-      phone = phoneData['mobile'] ?? 'N/A';
-    } else if (phoneData is List &&
-        phoneData.isNotEmpty &&
-        phoneData[0] is Map) {
-      phone = phoneData[0]['mobile'] ?? 'N/A';
-    } else {
-      phone = 'N/A';
-    }
-
-    final patientId = patient['id'].toString() ?? 'N/A';
-    final address = patient['address']?['Address'] ?? 'N/A';
-    // final doctorName = ((record['Hospital']?['Admins'] as List?) ?? [])
-    //     .cast<Map<String, dynamic>>()
-    //     .firstWhere(
-    //       (a) =>
-    //           a['user_Id'].toString() ==
-    //           ((record['doctor_Id'] as List?)?.first?.toString() ?? ''),
-    //       orElse: () => {'name': 'N/A'},
-    //     )['name']
-    //     .toString();
-    // final doctorId = record['doctor_Id'] != null
-    //     ? (record['doctor_Id'] as List).join(", ")
-    //     : 'N/A';
-    final hospitalAdmins = record['Hospital']?['Admins'];
-    List<Map<String, dynamic>> adminList = [];
-
-    if (hospitalAdmins is List) {
-      // only cast if it's really a List
-      adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
-    }
-
-    final doctorIdList = patient['doctor']?['id'] ?? '-';
-    String doctorId = '';
-
-    if (doctorIdList is List && doctorIdList.isNotEmpty) {
-      doctorId = doctorIdList.first.toString();
-    } else if (doctorIdList is String) {
-      doctorId = doctorIdList;
-    }
-
-    final doctor = adminList.firstWhere(
-      (a) => a['user_Id'].toString() == doctorId,
-      orElse: () => {'name': 'N/A'},
-    );
-
-    final doctorName = patient['doctor']?['name'] ?? '-';
-
-    final createdAt = record['createdAt'] ?? 'N/A';
-    final title = record['title'] ?? 'N/A';
-    final dob = _formatDob(patient['dob']);
-    final age = _calculateAge(patient['dob']);
-    final gender = patient['gender'] ?? 'N/A';
-    final bloodGroup = patient['bldGrp'] ?? 'N/A';
-
-    // 🩻 Selected GYN Options
-    final selectedOptions = List<String>.from(record['selectedOptions'] ?? []);
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -333,7 +112,7 @@ class _GynQueuePageState extends State<GynQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
+                color: Colors.black.withOpacity(0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -375,214 +154,63 @@ class _GynQueuePageState extends State<GynQueuePage> {
           ),
         ),
       ),
-      body: widget.mode == 2
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Scan report card
-                  ScanReportCard(scanData: record, hospitalLogo: logo, mode: 2),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildPatientCard(
-                    name: patient['name'] ?? 'Unknown',
-                    id: patientId,
-                    phone: phone,
-                    address: address,
-                    dob: dob,
-                    age: age,
-                    gender: gender,
-                    bloodGroup: bloodGroup,
-                    createdAt: createdAt,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildMedicalCard(
-                    title: title,
-                    doctorName: doctorName,
-                    doctorId: doctorId,
-                    selectedOptions: selectedOptions,
-                  ),
-                  const SizedBox(height: 30),
+      body: FutureBuilder<List<dynamic>>(
+        future: futureXRayQueue,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                  // 📝 Description Input Box
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Description",
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          cursorColor: primaryColor,
-                          controller: _descriptionController,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: "Enter GYN report or notes...",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 1.5,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoading
-                                ? null
-                                : _handleSubmit, // Disable when loading
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                            ),
-                            icon: _isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.check_circle_outline,
-                                    color: Colors.white,
-                                  ),
-                            label: Text(
-                              _isLoading ? "Submitting..." : "Submit",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          if (snapshot.hasError) {
+            return Center(
+              child: Lottie.asset(
+                'assets/Lottie/error404.json',
+                width: 280,
+                height: 280,
+                fit: BoxFit.contain,
               ),
-            ),
-      floatingActionButton: widget.mode == 2
-          ? FloatingActionButton.extended(
-              onPressed: handelSubmitReport,
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text(
-                "Submit Report",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              backgroundColor: Colors.blueAccent,
-              foregroundColor: Colors.white,
-              elevation: 5,
-            )
-          : null, // No FAB in non-completed state
+            );
+          }
 
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
-  }
+          final records = snapshot.data ?? [];
 
-  // 🧍 PATIENT CARD
-  Widget _buildPatientCard({
-    required String name,
-    required String id,
-    required String phone,
-    required String address,
-    required String dob,
-    required String age,
-    required String gender,
-    required String bloodGroup,
-    required String createdAt,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          List<dynamic> pendingRecords = records
+              .where((r) => r['queueStatus']?.toString() == 'PENDING')
+              .toList();
+          List<dynamic> completedRecords = records
+              .where((r) => r['queueStatus']?.toString() == 'COMPLETED')
+              .toList();
+
+          List<List<dynamic>> tabRecords = [pendingRecords, completedRecords];
+
+          return Column(
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: primaryColor, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ),
-              GestureDetector(
-                onTap: _togglePatientExpand,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        _isPatientExpanded ? "Hide" : "View All",
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Icon(
-                        _isPatientExpanded
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                        color: primaryColor,
-                      ),
-                    ],
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 16,
+                ),
+                child: Center(
+                  child: Text(
+                    "Waiting Patients ( ${records.length} )",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
@@ -616,208 +244,131 @@ class _GynQueuePageState extends State<GynQueuePage> {
     );
   }
 
-  // 🏥 MEDICAL CARD
-  Widget _buildMedicalCard({
-    required String title,
-    required String doctorName,
-    required String doctorId,
-    required List<String> selectedOptions,
-  }) {
-    final testDetails = widget.record['testDetails'] ?? [];
-
-    // Collect selected GYN options
-    final List<Map<String, dynamic>> selectedOptions = [];
-
-    for (var test in testDetails) {
-      if (test['options'] != null) {
-        for (var opt in test['options']) {
-          if (opt['selectedOption'] != "N/A") {
-            selectedOptions.add(opt);
-          }
-        }
-      }
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Text(
-              title.isEmpty ? "Medical Information" : title,
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-              ),
+  Widget _buildQueueList(List<dynamic> records) {
+    if (records.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/Lottie/NoData.json',
+              width: 250,
+              height: 250,
+              repeat: true,
             ),
-          ),
-          const Divider(height: 25, color: Colors.grey),
-
-          _infoRow("Doctor Name", doctorName),
-          _infoRow("Doctor ID", doctorId),
-
-          const Divider(height: 30, color: Colors.grey),
-          _sectionHeader("Selected GYN Options"),
-          const SizedBox(height: 10),
-
-          if (selectedOptions.isEmpty)
+            const SizedBox(height: 16),
             const Text(
               "No GYN patients in this tab",
               style: TextStyle(fontSize: 16, color: Colors.black54),
             ),
+          ],
+        ),
+      );
+    }
 
-          ...selectedOptions.map((opt) {
-            final String optionName = opt['selectedOption'];
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: records.length,
+      itemBuilder: (context, index) {
+        final record = records[index];
+        final patient = record['Patient'] ?? {};
+        final createdAt = record['createdAt'];
+        final title = (record['title']?.toString().trim().isNotEmpty ?? false)
+            ? record['title']
+            : record['type'];
+        final gender = patient['gender'] ?? 'other';
+        final color = _genderColor(gender);
+        final queueStatus = record['queueStatus'];
+        final mode = (queueStatus == 'PENDING') ? 1 : 2;
 
-            // Create controller once
-            noteControllers.putIfAbsent(
-              optionName,
-              () => TextEditingController(),
+        return GestureDetector(
+          onTap: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => GynPage(record: record, mode: mode),
+              ),
             );
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      size: 18,
-                      color: Colors.green,
+            if (result == true) {
+              setState(() {
+                futureXRayQueue = TestingScanningService()
+                    .getAllTestingAndScanning('GYN');
+              });
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black45.withOpacity(0.35),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(_genderIcon(gender), size: 28, color: color),
+                      const SizedBox(width: 8),
+                      Text(
+                        patient['name'] ?? 'Unknown',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Divider(
+                    color: Colors.grey.shade400,
+                    thickness: 1.4,
+                    endIndent: 25,
+                    indent: 25,
+                  ),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      optionName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (queueStatus == 'COMPLETED') ...[
+                            const SizedBox(width: 12),
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 18,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                TextField(
-                  cursorColor: primaryColor,
-                  controller: noteControllers[optionName],
-                  decoration: InputDecoration(
-                    hintText: "Enter $optionName value...",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: primaryColor, width: 1.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-              ],
-            );
-          }),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final picker = ImagePicker();
-                    final picked = await picker.pickMultiImage();
-
-                    if (picked != null && picked.isNotEmpty) {
-                      if (_pickedImages.length + picked.length > 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Maximum 6 images allowed!"),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setState(() {
-                        _pickedImages.addAll(
-                          picked.map((img) => File(img.path)).toList(),
-                        );
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("${picked.length} image(s) added"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.attach_file, color: Colors.white),
-                  label: const Text(
-                    "Gallery ",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // 👈 Rounded Border
-                    ),
-                  ),
-                ),
-              ),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final picker = ImagePicker();
-                    final picked = await picker.pickImage(
-                      source: ImageSource.camera,
-                    );
-
-                    if (picked != null) {
-                      if (_pickedImages.length + 1 > 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Maximum 6 images allowed!"),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setState(() {
-                        _pickedImages.add(File(picked.path));
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text("1 image added from Camera"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.camera_alt, color: Colors.white),
-                  label: const Text(
-                    "Camera",
-                    style: TextStyle(color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   Row(

@@ -180,12 +180,12 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
       return;
     }
-    final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
+    final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
     final prefs = await SharedPreferences.getInstance();
 
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
-    final Staff_Id = prefs.getString('userId');
+    final staffId = prefs.getString('userId');
     final response = await PaymentService().updatePayment(paymentId, {
       'status': 'PAID',
       // 'transactionId': paymentResult['transactionId'],
