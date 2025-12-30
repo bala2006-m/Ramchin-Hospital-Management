@@ -187,18 +187,30 @@ ${hospital['name'] ?? 'Hospital'}
     await _sendToWhatsApp(phoneNumber, billText);
   }
 
-  /// ================= COMMON =================
-  static Future<void> _sendToWhatsApp(
-    String phoneNumber,
-    String message,
-  ) async {
-    final encodedText = Uri.encodeComponent(message);
-    final whatsappUrl = "whatsapp://send?phone=$phoneNumber&text=$encodedText";
+  // /// ================= COMMON =================
+  // static Future<void> _sendToWhatsApp(
+  //   String phoneNumber,
+  //   String message,
+  // ) async {
+  //   final encodedText = Uri.encodeComponent(message);
+  //   final whatsappUrl = "whatsapp://send?phone=$phoneNumber&text=$encodedText";
+  //
+  //   if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+  //     await launchUrl(Uri.parse(whatsappUrl));
+  //   } else {
+  //     throw Exception("WhatsApp not installed");
+  //   }
+  // }
 
-    if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
-      await launchUrl(Uri.parse(whatsappUrl));
-    } else {
-      throw Exception("WhatsApp not installed");
-    }
+  static Future<void> _sendToWhatsApp(String phone, String message) async {
+    final encodedMessage = Uri.encodeComponent(message);
+
+    final Uri url =
+        // kIsWeb
+        //     ? Uri.parse("https://wa.me/$phone?text=$encodedMessage")
+        //     :
+        Uri.parse("whatsapp://send?phone=$phone&text=$encodedMessage");
+
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 }

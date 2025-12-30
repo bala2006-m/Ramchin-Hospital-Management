@@ -329,6 +329,9 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     final age = _calculateAge(patient['dob']);
     final gender = patient['gender'] ?? '-';
     final bloodGroup = patient['bldGrp'] ?? '-';
+    final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
+        ? '-'
+        : patient['tokenNo'].toString();
 
     // 🩻 Selected EEG Options
     final selectedOptions = List<String>.from(record['selectedOptions'] ?? []);
@@ -416,6 +419,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                     name: patient['name'] ?? 'Unknown',
                     id: patientId,
                     phone: phone,
+                    tokenNo: tokenNo,
                     address: address,
                     dob: dob,
                     age: age,
@@ -545,6 +549,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     required String name,
     required String id,
     required String phone,
+    required String tokenNo,
     required String address,
     required String dob,
     required String age,
@@ -611,8 +616,30 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Divider(color: Colors.grey.shade300),
+          const SizedBox(height: 4),
+          Row(
+            //crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Token No: ',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Text(
+                tokenNo,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2), Divider(color: Colors.grey.shade300),
           _infoRow("Patient ID", id),
           _infoRow("Cell No", phone),
           _infoRow("Address", address),
@@ -731,7 +758,6 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
               ],
             ),
           ),
-
 
           const Divider(height: 30, color: Colors.grey),
           _sectionHeader("Selected EEG Options"),
