@@ -110,7 +110,8 @@ class _AddScanPageState extends State<AddScanPage>
 
   /// ---------------- SAVE ----------------
   Future<void> saveScanTest() async {
-    FocusManager.instance.primaryFocus?.unfocus(); // ✅ FIX
+    FocusManager.instance.primaryFocus?.unfocus();
+    final prefs = await SharedPreferences.getInstance(); // ✅ FIX
 
     if (!_formKey.currentState!.validate()) return;
     if (selectedOptions.isEmpty) {
@@ -118,11 +119,11 @@ class _AddScanPageState extends State<AddScanPage>
       return;
     }
 
-    final hospitalId = _prefs?.getString('hospitalId');
+    final hospitalId = prefs.getString('hospitalId') ?? '';
     setState(() => isLoading = true);
 
     final testData = {
-      "hospital_Id": int.parse(hospitalId!),
+      "hospital_Id": int.parse(hospitalId),
       "title": _titleController.text,
       "type": "SCAN",
       "options": selectedOptions,

@@ -74,7 +74,7 @@ class _AddTestPageState extends State<AddTestPage>
   Future<void> fetchAllOptionName() async {
     setState(() => isLoading = true);
     optionList = await ScanTestGetService().getAllUnitReference('TEST');
-
+    print('optionList $optionList');
     setState(() => isLoading = false);
   }
 
@@ -106,11 +106,13 @@ class _AddTestPageState extends State<AddTestPage>
   Future<void> fetchScanTests() async {
     setState(() => isLoading = true);
     scanTestList = await ScanTestGetService().fetchTestAndScan('TEST');
+    print('scanTestList $scanTestList');
     setState(() => isLoading = false);
   }
 
   /// ---------------- SAVE ----------------
   Future<void> saveScanTest() async {
+    final prefs = await SharedPreferences.getInstance();
     FocusManager.instance.primaryFocus?.unfocus(); // ✅ FIX
 
     if (!_formKey.currentState!.validate()) return;
@@ -119,11 +121,11 @@ class _AddTestPageState extends State<AddTestPage>
       return;
     }
 
-    final hospitalId = _prefs?.getString('hospitalId');
+    final hospitalId = prefs.getString('hospitalId') ?? '';
     setState(() => isLoading = true);
 
     final testData = {
-      "hospital_Id": int.parse(hospitalId!),
+      "hospital_Id": int.parse(hospitalId),
       "title": _titleController.text,
       "type": "TEST",
       "options": selectedOptions,
@@ -135,6 +137,7 @@ class _AddTestPageState extends State<AddTestPage>
     if (editingId == null) {
       await ScanTestGetService().createTestScan([testData]);
     } else {
+      print('work');
       await ScanTestGetService().updateScanTest(editingId!, testData);
     }
     setState(() => isLoading = false);
@@ -185,6 +188,7 @@ class _AddTestPageState extends State<AddTestPage>
   //   });
   // }
   void editScanTest(dynamic item) {
+    print('item ${item['id']}');
     setState(() {
       editingId = item['id'];
       _titleController.text = item['title'];
@@ -361,8 +365,10 @@ class _AddTestPageState extends State<AddTestPage>
                   ElevatedButton(
                     onPressed: () {
                       if (editOption != null) {
-                        editOption['id'] ??=
-                            selectedOptionId; // ✅ keep or set ID
+                        editOption['id'] ??= selectedOptionId;
+                        print(
+                          'selectedOptionId $selectedOptionId editOption $editOption',
+                        ); // ✅ keep or set ID
 
                         editOption['name'] = nameCtrl.text;
                         editOption['price'] = double.parse(priceCtrl.text);

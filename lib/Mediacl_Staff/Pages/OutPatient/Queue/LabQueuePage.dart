@@ -398,10 +398,15 @@ class _LabQueuePageState extends State<LabQueuePage> {
                       final record = sugarRecords[index];
                       final patient = record['Patient'] ?? {};
                       final gender = (patient['gender'] ?? 'other').toString();
+                      final tokenNo =
+                          (record['tokenNo'] == null || record['tokenNo'] == 0)
+                          ? '-'
+                          : record['tokenNo'].toString();
 
                       return _SugarPatientCard(
                         patient: patient,
                         consultationId: record['id'].toString(),
+                        tokenNo: tokenNo,
                         genderColor: _genderColor(gender),
                         genderIcon: _genderIcon(gender),
                         onRefresh: () {
@@ -674,7 +679,9 @@ class _PatientTestCardState extends State<PatientTestCard> {
 class _SugarPatientCard extends StatelessWidget {
   final Map<String, dynamic> patient;
   final String consultationId;
+  final String tokenNo;
   final Color genderColor;
+
   final IconData genderIcon;
   final VoidCallback onRefresh;
 
@@ -684,6 +691,7 @@ class _SugarPatientCard extends StatelessWidget {
     required this.genderColor,
     required this.genderIcon,
     required this.onRefresh,
+    required this.tokenNo,
   });
 
   @override
@@ -719,6 +727,28 @@ class _SugarPatientCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// Header
+            Row(
+              //crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Token No: ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                Text(
+                  tokenNo,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
             Row(
               children: [
                 Icon(genderIcon, color: genderColor, size: 28),

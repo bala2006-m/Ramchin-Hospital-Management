@@ -324,6 +324,10 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     final num? consultationFee = consultation?['consultationFee'];
     final num? emergencyFee = consultation?['emergencyFee'];
     final num? sugarTestFee = consultation?['sugarTestFee'];
+    final tokenNo =
+        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        ? '-'
+        : consultation['tokenNo'].toString();
     final num totalAmount =
         (registrationFee ?? 0) +
         (consultationFee ?? 0) +
@@ -476,6 +480,36 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                             fontSize: 13,
                             color: Colors.grey[700],
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Text(
+                        //   "Token No: ${widget.fee['Consultation']['tokenNo'] ?? '-'}",
+                        //   style: TextStyle(
+                        //     fontSize: 13,
+                        //     color: Colors.grey[700],
+                        //   ),
+                        // ),
+                        Row(
+                          mainAxisSize: MainAxisSize
+                              .min, // row takes minimal horizontal space
+                          children: [
+                            Text(
+                              'Token No: ',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            Text(
+                              tokenNo,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
                         const Divider(thickness: 1.2, height: 25),
                       ],
@@ -863,6 +897,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                     ),
                                     patientName: nameController.text,
                                     patientId: idController.text,
+                                    tokenNo: tokenNo,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     registrationFee:
@@ -907,6 +942,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                     ),
                                     patientName: nameController.text,
                                     patientId: idController.text,
+                                    tokenNo: tokenNo,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     tests: List<Map<String, dynamic>>.from(

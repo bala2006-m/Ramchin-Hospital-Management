@@ -23,6 +23,7 @@ class WhatsAppSendPaymentBill {
     required String phoneNumber,
     required String patientName,
     required String patientId,
+    required String tokenNo,
     required String age,
     required String address,
     required num registrationFee,
@@ -59,7 +60,7 @@ class WhatsAppSendPaymentBill {
 📍 ${hospital['place'] ?? '-'}
 
 📅 *Date:* $date
-
+       *TokenNO:* $tokenNo
 ━━━━━━━━━━━━━━━━━━━
 👤 *PATIENT DETAILS*
 ━━━━━━━━━━━━━━━━━━━
@@ -91,6 +92,7 @@ ${hospital['name'] ?? 'Hospital'}
   static Future<void> sendTestingBill({
     required String phoneNumber,
     required String patientName,
+    required String tokenNo,
     required String patientId,
     required String age,
     required String address,
@@ -155,7 +157,7 @@ ${hospital['name'] ?? 'Hospital'}
 📍 ${hospital['place'] ?? '-'}
 
 📅 *Date:* $date
-
+       *TokenNO:* $tokenNo
 ━━━━━━━━━━━━━━━━━━━━━━
 👤 *PATIENT DETAILS*
 ━━━━━━━━━━━━━━━━━━━━━━

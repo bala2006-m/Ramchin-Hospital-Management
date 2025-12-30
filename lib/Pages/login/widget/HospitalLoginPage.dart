@@ -382,7 +382,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       await prefs.setString('hospitalPhoto', hospitalPhoto);
       await prefs.setString('accessToken', token);
       // await prefs.setString( 'userId',   userId);
-      // await prefs.setString( 'hospitalId',   hospitalId);
+      await prefs.setString('hospitalId', hospitalId);
       await prefs.setString('hospitalStatus', hospitalStatus);
 
       await prefs.setString('staffName', staffName);
