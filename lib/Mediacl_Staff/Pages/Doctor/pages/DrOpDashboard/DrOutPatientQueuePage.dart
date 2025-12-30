@@ -144,36 +144,6 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
     }
   }
 
-  // int getModeFromType(dynamic type) {
-  //   if (type == null) return 4;
-  //   final typeStr = type.toString().toLowerCase();
-  //
-  //   final containsTest = typeStr.contains('test');
-  //   final containsScan = typeStr.contains('!scan');
-  //
-  //   if (containsTest && containsScan) return 3; // Test_Scan
-  //   if (containsTest) return 2; // Test mode
-  //   if (!containsTest) return 1; // Scan mode
-  //   return 4; // Other
-  // }
-  // int getModeFromType(dynamic type) {
-  //   if (type == null) return 4;
-  //
-  //   final typeStr = type.toString().trim().toLowerCase();
-  //   if (typeStr.isEmpty) return 4;
-  //
-  //   final containsTest = type.contains('Tests');
-  //   final containsScan = type.contains('X-Ray') || type.contains('ct-scan');
-  //
-  //   // Case 1: type = "test"
-  //   if (containsTest && !containsScan) return 2;
-  //
-  //   // Case 2: type does NOT contain "test" but is not empty → !test
-  //   if (!containsTest && type.isNotEmpty) return 1;
-  //
-  //   // Default
-  //   return 3;
-  // }
   int getModeFromType(dynamic list) {
     if (list == null || list is! List || list.isEmpty) return 4;
 
@@ -200,24 +170,6 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
     if (hasScan) return 2; // Only Scan
     return 4; // Default
   }
-
-  // int getModeFromType(dynamic type) {
-  //   if (type == null) return 4;
-  //
-  //   final typeStr = type.toString().toLowerCase().trim();
-  //   if (typeStr.isEmpty) return 4;
-  //
-  //   final containsTest = typeStr.contains('test');
-  //   final containsScan =
-  //       typeStr.contains('x-ray') || typeStr.contains('ct-scan');
-  //
-  //   if (containsTest && !containsScan) return 1; // Only test
-  //   if (!containsTest && containsScan) return 2; // Only scan
-  //   if (!containsTest && !containsScan) return 3; // Default / other
-  //   if (containsTest && containsScan) return 3; // Both → treat as default
-  //
-  //   return 4; // fallback
-  // }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -293,6 +245,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
               builder: (_) => PatientDescriptionPage(
                 consultation: consultation,
                 mode: mode,
+                role: widget.role,
               ),
             ),
           );

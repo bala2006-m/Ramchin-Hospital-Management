@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Pages/payment_modal.dart';
 import '../../../../Services/consultation_service.dart';
@@ -14,6 +13,7 @@ import '../../../../Services/payment_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../Medical/Widget/whatsApp_Send_PaymentBill.dart';
+import 'widget.dart';
 
 class FeesPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;
@@ -28,10 +28,10 @@ class FeesPaymentPage extends StatefulWidget {
   });
 
   @override
-  State<FeesPaymentPage> createState() => _FeesPaymentPageState();
+  State<FeesPaymentPage> createState() => FeesPaymentPageState();
 }
 
-class _FeesPaymentPageState extends State<FeesPaymentPage> {
+class FeesPaymentPageState extends State<FeesPaymentPage> {
   final prefs = SharedPreferences.getInstance();
   bool _isProcessing = false;
   final socketService = SocketService();
@@ -105,7 +105,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     }
   }
 
-  String calculateAge(String? dob) {
+  static String calculateAge(String? dob) {
     if (dob == null || dob.trim().isEmpty) return 'N/A';
 
     try {
@@ -133,7 +133,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     }
   }
 
-  String getFormattedDate(dynamic value) {
+  static String getFormattedDate(dynamic value) {
     if (value == null) return "-";
 
     try {
@@ -158,7 +158,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
       return DateFormat("dd-MM-yyyy hh:mm a").format(date);
     } catch (e) {
-      print("Date parse error: $e");
       return value.toString();
     }
   }
@@ -182,7 +181,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     }
     final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
     final prefs = await SharedPreferences.getInstance();
-
 
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
@@ -208,14 +206,12 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       final testId = (testings != null && testings.isNotEmpty)
           ? testings[0]['payment_Id']
           : null;
-      print(testId);
+
       await TestingScanningService().updateTestAndScan(testId);
       await ConsultationService().updateConsultation(consultationId, {
         "queueStatus": 'PENDING',
       });
-    } else {
-      print('Invalid type');
-    }
+    } else {}
     // else if (type == 'MEDICINEFEEANDINJECTIONFEE') {
     // await ConsultationService().updateConsultation(Id, {
     // "paymentStatus": true,
@@ -230,9 +226,11 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       ).showSnackBar(const SnackBar(content: Text('✅ Payment Successful')));
       Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Failed to update payment status.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('⚠️ Failed to update payment status.')),
+        );
+      }
     }
   }
 
@@ -247,7 +245,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
       // 🔒 Safety check
       if (sugarFee <= 0) {
-        print('No sugar test fee to remove');
         return;
       }
 
@@ -274,50 +271,47 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
         widget.fee['amount'] = finalTotal;
         consultation['sugarTestFee'] = 0;
       });
-
-      print('✅ Sugar test removed successfully');
     } catch (e) {
-      print('❌ Error updating sugar test: $e');
+      setState(() {});
     }
   }
 
-  Future<void> _updateTestAndScan() async {
-    final testings = widget.fee['TestingAndScanningPatients'];
-
-    final paymentId = widget.fee['id'];
-
-    final num paymentAmount = widget.fee['amount'] ?? 0;
-    final num testFee = testings?['amount'] ?? 0;
-
-    // 🔒 Safety check
-    if (testFee <= 0) {
-      print('No test fee to remove');
-      return;
-    }
-
-    final num finalTotal = (paymentAmount - testFee).clamp(0, double.infinity);
-
-    /// 🔹 Update Payment Amount
-    await PaymentService().updatePayment(paymentId, {
-      'amount': finalTotal,
-      'updatedAt': _dateTime.toString(),
-    });
-
-    final testId = (testings != null && testings.isNotEmpty)
-        ? testings[0]['payment_Id']
-        : null;
-    try {
-      await ConsultationService().updateConsultation(testId, {
-        "unSelectedOptions": '',
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
+  // Future<void> _updateTestAndScan() async {
+  //   final testings = widget.fee['TestingAndScanningPatients'];
+  //
+  //   final paymentId = widget.fee['id'];
+  //
+  //   final num paymentAmount = widget.fee['amount'] ?? 0;
+  //   final num testFee = testings?['amount'] ?? 0;
+  //
+  //   // 🔒 Safety check
+  //   if (testFee <= 0) {
+  //     print('No test fee to remove');
+  //     return;
+  //   }
+  //
+  //   final num finalTotal = (paymentAmount - testFee).clamp(0, double.infinity);
+  //
+  //   /// 🔹 Update Payment Amount
+  //   await PaymentService().updatePayment(paymentId, {
+  //     'amount': finalTotal,
+  //     'updatedAt': _dateTime.toString(),
+  //   });
+  //
+  //   final testId = (testings != null && testings.isNotEmpty)
+  //       ? testings[0]['payment_Id']
+  //       : null;
+  //   try {
+  //     await ConsultationService().updateConsultation(testId, {
+  //       "unSelectedOptions": '',
+  //     });
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
-    print('fee ${widget.fee}');
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
     final consultation = widget.fee['Consultation'];
 
@@ -329,11 +323,11 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
         (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
         ? '-'
         : consultation['tokenNo'].toString();
-    final num totalAmount =
-        (registrationFee ?? 0) +
-        (consultationFee ?? 0) +
-        (emergencyFee ?? 0) +
-        (sugarTestFee ?? 0);
+    // final num totalAmount =
+    //     (registrationFee ?? 0) +
+    //     (consultationFee ?? 0) +
+    //     (emergencyFee ?? 0) +
+    //     (sugarTestFee ?? 0);
 
     final Color themeColor = const Color(0xFFBF955E);
     const Color background = Color(0xFFF8F8F8);
@@ -649,7 +643,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
                         const SizedBox(height: 8),
                       ];
-                    }).toList(),
+                    }),
 
                     //   ...tests.asMap().entries.map((entry) {
                     //     final index = entry.key;
@@ -763,7 +757,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "Total : ₹ ${_calculateTotal(widget.fee['amount'])}",
+                          "Total : ₹ ${calculateTotal(widget.fee['amount'])}",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -827,12 +821,14 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                 final consultationId =
                                     widget.fee['consultation_Id'];
                                 final staffId = prefs.getString('userId');
-                                _showCancelDialog(
-                                  context,
-                                  paymentId: paymentId,
-                                  consultationId: consultationId,
-                                  staffId: staffId,
-                                );
+                                if (context.mounted) {
+                                  _showCancelDialog(
+                                    context,
+                                    paymentId: paymentId,
+                                    consultationId: consultationId,
+                                    staffId: staffId,
+                                  );
+                                }
                               },
                               icon: const Icon(Icons.cancel, size: 22),
                               label: const Text(
@@ -859,7 +855,15 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                             // 🔹 Print Button
                             ElevatedButton.icon(
                               onPressed: () async {
-                                final pdf = await _buildPdf();
+                                final pdf = await buildPdf(
+                                  cellController: cellController,
+                                  dobController: dobController,
+                                  fee: widget.fee,
+                                  hospitalName: hospitalName!,
+                                  hospitalPlace: hospitalPlace!,
+                                  nameController: nameController,
+                                  logo: logo!,
+                                );
                                 await Printing.layoutPdf(
                                   onLayout: (format) async => pdf.save(),
                                 );
@@ -869,7 +873,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                                 color: Colors.white,
                               ),
                               label: const Text(
-                                "Print",
+                                "Print ",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -878,7 +882,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blueAccent.shade400,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
+                                  horizontal: 15,
                                   vertical: 12,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -955,7 +959,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 15,
-                                  vertical: 10,
+                                  vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.green,
@@ -970,38 +974,46 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                             ),
 
                             // 🔹 Share Button
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                final pdf = await _buildPdf();
-                                await Printing.sharePdf(
-                                  bytes: await pdf.save(),
-                                  filename: "hospital_bill.pdf",
-                                );
-                              },
-
-                              icon: const Icon(
-                                Icons.share,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Share",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 5,
-                              ),
-                            ),
+                            // ElevatedButton.icon(
+                            //   onPressed: () async {
+                            //     final pdf = await buildPdf(
+                            //       cellController: cellController,
+                            //       dobController: dobController,
+                            //       fee: widget.fee,
+                            //       hospitalName: hospitalName!,
+                            //       hospitalPlace: hospitalPlace!,
+                            //       nameController: nameController,
+                            //       logo: logo!,
+                            //     );
+                            //     await Printing.sharePdf(
+                            //       bytes: await pdf.save(),
+                            //       filename: "hospital_bill.pdf",
+                            //     );
+                            //   },
+                            //
+                            //   icon: const Icon(
+                            //     Icons.share,
+                            //     color: Colors.white,
+                            //   ),
+                            //   label: const Text(
+                            //     "Share",
+                            //     style: TextStyle(
+                            //       color: Colors.white,
+                            //       fontSize: 16,
+                            //     ),
+                            //   ),
+                            //   style: ElevatedButton.styleFrom(
+                            //     backgroundColor: Colors.green,
+                            //     padding: const EdgeInsets.symmetric(
+                            //       horizontal: 12,
+                            //       vertical: 12,
+                            //     ),
+                            //     shape: RoundedRectangleBorder(
+                            //       borderRadius: BorderRadius.circular(12),
+                            //     ),
+                            //     elevation: 5,
+                            //   ),
+                            // ),
                           ],
                         ),
                 ],
@@ -1134,13 +1146,13 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                           setState(() => isLoading = true);
 
                           try {
-                            final _dateTime = DateTime.now();
+                            final dateTime = DateTime.now();
 
                             /// 🔹 Update Payment
                             await PaymentService().updatePayment(paymentId, {
                               'status': 'CANCELLED',
                               'staff_Id': staffId.toString(),
-                              'updatedAt': _dateTime.toString(),
+                              'updatedAt': dateTime.toString(),
                             });
 
                             /// 🔹 Update Consultation
@@ -1149,24 +1161,28 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                               {'status': 'CANCELLED'},
                             );
 
-                            Navigator.pop(ctx); // close dialog
+                            if (context.mounted) {
+                              Navigator.pop(ctx); // close dialog
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("❌ Cancelled successfully"),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            Navigator.pop(context, true);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("❌ Cancelled successfully"),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                              Navigator.pop(context, true);
+                            }
                           } catch (e) {
                             setState(() => isLoading = false);
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Failed to cancel"),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Failed to cancel"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         },
                   child: isLoading
@@ -1186,478 +1202,6 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
         );
       },
     );
-  }
-
-  Future<pw.Document> _buildPdf() async {
-    final ttf = await PdfGoogleFonts.notoSansRegular();
-    final ttfBold = await PdfGoogleFonts.notoSansBold();
-    final pdf = pw.Document();
-
-    final logoo = pw.MemoryImage((await http.get(Uri.parse(logo!))).bodyBytes);
-
-    final blue = PdfColor.fromHex("#0A3D91");
-    final lightBlue = PdfColor.fromHex("#1E5CC4");
-    pw.Widget logoWidget = pw.SizedBox(width: 110, height: 50);
-
-    try {
-      if (logo != null && logo!.isNotEmpty) {
-        final logoImage = await networkImage(logo!);
-        logoWidget = pw.Image(
-          logoImage,
-          width: 110,
-          height: 50,
-          fit: pw.BoxFit.contain,
-        );
-      }
-    } catch (_) {
-      logoWidget = pw.SizedBox(width: 110, height: 50);
-    }
-    pdf.addPage(
-      pw.Page(
-        theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
-        // margin: const pw.EdgeInsets.all(28),
-        build: (context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // ------------------------ HEADER ------------------------
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        "$hospitalName",
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: blue,
-                        ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        "$hospitalPlace",
-                        style: pw.TextStyle(fontSize: 11),
-                      ),
-                      pw.Text(
-                        "Accurate  |  Caring  |  Instant",
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColor.fromInt(0x777777),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  pw.Container(
-                    width: 120,
-                    height: 50,
-                    alignment: pw.Alignment.centerRight,
-                    child: logoWidget,
-                  ),
-                ],
-              ),
-
-              pw.SizedBox(height: 18),
-              pw.Divider(),
-              pw.SizedBox(height: 18),
-
-              // ------------------------ PATIENT INFO BOX ------------------------
-              pw.Container(
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  borderRadius: pw.BorderRadius.circular(10),
-                  border: pw.Border.all(color: PdfColor.fromHex("#D9D9D9")),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // LEFT SIDE
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            "Name: ${nameController.text}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                          pw.Text(
-                            "PID: ${widget.fee['Patient']['id']}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                          pw.Text(
-                            "Phone: ${cellController.text}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // RIGHT SIDE
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.end,
-                        children: [
-                          pw.Text(
-                            "Age: ${calculateAge(dobController.text)}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                          pw.Text(
-                            "Sex: ${widget.fee['Patient']['gender']}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                          pw.Text(
-                            "Date: ${getFormattedDate(DateTime.now().toString())}",
-                            style: pw.TextStyle(fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(height: 20),
-
-              // ------------------------ TEST TITLE BAR ------------------------
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(vertical: 8),
-                decoration: pw.BoxDecoration(
-                  gradient: pw.LinearGradient(colors: [blue, lightBlue]),
-                  borderRadius: pw.BorderRadius.circular(12),
-                ),
-                child: pw.Center(
-                  child: pw.Text(
-                    widget.fee['reason'].toString().toUpperCase(),
-                    style: pw.TextStyle(
-                      color: PdfColors.white,
-                      fontSize: 13,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              pw.SizedBox(height: 20),
-
-              // ------------------------ TABLE HEADER ------------------------
-              // Header
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 8,
-                ),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey300,
-                  borderRadius: pw.BorderRadius.circular(4),
-                  border: pw.Border.all(color: PdfColors.grey600, width: 1),
-                ),
-                child: pw.Row(
-                  children: [
-                    pw.Expanded(
-                      flex: 3,
-                      child: pw.Text(
-                        "Service / Test",
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          "Amount (₹)",
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              pw.SizedBox(height: 6),
-
-              // Registration Fee
-              // pw.Container(
-              //   padding: const pw.EdgeInsets.symmetric(vertical: 6),
-              //
-              //   // child: pw.Row(
-              //   //   children: [
-              //   //     pw.Expanded(
-              //   //       flex: 3,
-              //   //       child: pw.Text(
-              //   //         "${widget.fee['reason']}", // Registration or Consultation
-              //   //         style: const pw.TextStyle(fontSize: 11),
-              //   //       ),
-              //   //     ),
-              //   //     pw.Expanded(
-              //   //       flex: 1,
-              //   //       child: pw.Align(
-              //   //         alignment: pw.Alignment.centerRight,
-              //   //         child: pw.Text(
-              //   //           "₹ ${widget.fee['amount']}",
-              //   //           style: const pw.TextStyle(fontSize: 11),
-              //   //         ),
-              //   //       ),
-              //   //     ),
-              //   //   ],
-              //   // ),
-              // ),
-              if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
-                pw.Table(
-                  columnWidths: {
-                    0: const pw.FlexColumnWidth(3),
-                    1: const pw.FlexColumnWidth(1),
-                  },
-                  children: buildFeeRows(
-                    registrationFee:
-                        widget.fee['Consultation']?['registrationFee'],
-                    consultationFee:
-                        widget.fee['Consultation']?['consultationFee'],
-                    emergencyFee: widget.fee['Consultation']?['emergencyFee'],
-                    sugarTestFee: widget.fee['Consultation']?['sugarTestFee'],
-                  ),
-                ),
-              ],
-
-              pw.Divider(),
-
-              pw.SizedBox(height: 4),
-
-              // Tests List
-              // if (widget.fee['TestingAndScanningPatients'] != null)
-              //   ...widget.fee['TestingAndScanningPatients'].map<pw.Widget>((t) {
-              //     return pw.Container(
-              //       padding: const pw.EdgeInsets.symmetric(vertical: 6),
-              //       child: pw.Row(
-              //         children: [
-              //           pw.Expanded(
-              //             flex: 3,
-              //             child: pw.Text(
-              //               "${t['title']}",
-              //               style: const pw.TextStyle(fontSize: 11),
-              //             ),
-              //           ),
-              //           pw.Expanded(
-              //             flex: 1,
-              //             child: pw.Align(
-              //               alignment: pw.Alignment.centerRight,
-              //               child: pw.Text(
-              //                 "₹ ${t['amount']}",
-              //                 style: const pw.TextStyle(fontSize: 11),
-              //               ),
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //     );
-              //   }).toList(),
-              if (widget.fee['TestingAndScanningPatients'] != null)
-                ...widget.fee['TestingAndScanningPatients'].map<pw.Widget>((t) {
-                  final String title = t['title']?.toString() ?? '-';
-                  final num testAmount = t['amount'] ?? 0;
-                  final dynamic selectedOption = t['selectedOptionAmounts'];
-
-                  final List<pw.Widget> rows = [];
-
-                  // 🔹 Parent test title (bold)
-                  rows.add(
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(vertical: 4),
-                      child: pw.Row(
-                        children: [
-                          pw.Expanded(
-                            flex: 3,
-                            child: pw.Text(
-                              title,
-                              style: pw.TextStyle(
-                                fontSize: 11,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          pw.Expanded(
-                            flex: 1,
-                            child: pw.Align(
-                              alignment: pw.Alignment.centerRight,
-                              child: pw.Text(
-                                testAmount > 0 ? "₹ $testAmount" : "",
-                                style: pw.TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: pw.FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-
-                  bool hasOptions = false;
-
-                  // 🔹 CASE 1: Map options
-                  if (selectedOption is Map) {
-                    selectedOption.forEach((key, value) {
-                      final num amt = num.tryParse(value.toString()) ?? 0;
-                      if (amt > 0) {
-                        hasOptions = true;
-                        rows.add(
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.only(left: 10, top: 2),
-                            child: pw.Row(
-                              children: [
-                                pw.Expanded(
-                                  flex: 3,
-                                  child: pw.Text(
-                                    key.toString(),
-                                    style: const pw.TextStyle(fontSize: 10),
-                                  ),
-                                ),
-                                pw.Expanded(
-                                  flex: 1,
-                                  child: pw.Align(
-                                    alignment: pw.Alignment.centerRight,
-                                    child: pw.Text(
-                                      "₹ $amt",
-                                      style: const pw.TextStyle(fontSize: 10),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                    });
-                  }
-                  // 🔹 CASE 2: List options
-                  else if (selectedOption is List) {
-                    for (final o in selectedOption) {
-                      if (o is Map) {
-                        final String name = o['name']?.toString() ?? '';
-                        final num amt = o['amount'] ?? 0;
-
-                        if (name.isNotEmpty && amt > 0) {
-                          hasOptions = true;
-                          rows.add(
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.only(
-                                left: 10,
-                                top: 2,
-                              ),
-                              child: pw.Row(
-                                children: [
-                                  pw.Expanded(
-                                    flex: 3,
-                                    child: pw.Text(
-                                      name,
-                                      style: const pw.TextStyle(fontSize: 10),
-                                    ),
-                                  ),
-                                  pw.Expanded(
-                                    flex: 1,
-                                    child: pw.Align(
-                                      alignment: pw.Alignment.centerRight,
-                                      child: pw.Text(
-                                        "₹ $amt",
-                                        style: const pw.TextStyle(fontSize: 10),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  }
-
-                  // 🔹 CASE 3: No options → show total
-                  if (!hasOptions && testAmount > 0) {
-                    rows.add(
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.only(left: 10, top: 2),
-                        child: pw.Row(
-                          children: [
-                            pw.Expanded(
-                              flex: 3,
-                              child: pw.Text(
-                                'Amount',
-                                style: const pw.TextStyle(fontSize: 10),
-                              ),
-                            ),
-                            pw.Expanded(
-                              flex: 1,
-                              child: pw.Align(
-                                alignment: pw.Alignment.centerRight,
-                                child: pw.Text(
-                                  "₹ $testAmount",
-                                  style: const pw.TextStyle(fontSize: 10),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  // 🔹 Space after each test
-                  rows.add(pw.SizedBox(height: 6));
-
-                  return pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: rows,
-                  );
-                }).toList(),
-
-              pw.SizedBox(height: 12),
-
-              // ------------------------ TOTAL ------------------------
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  "TOTAL : ₹ ${_calculateTotal(widget.fee['amount'])}",
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                    color: blue,
-                  ),
-                ),
-              ),
-
-              pw.SizedBox(height: 30),
-
-              // ------------------------ FOOTER ------------------------
-              pw.Center(
-                child: pw.Text(
-                  "Thank you for choosing Green Valley Hospital",
-                  style: pw.TextStyle(
-                    fontSize: 11,
-                    color: PdfColor.fromInt(0x666666),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    return pdf;
   }
 
   List<pw.TableRow> buildFeeRows({
@@ -1814,7 +1358,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
   //   return tax.toStringAsFixed(0);
   // }
 
-  String _calculateTotal(dynamic amount) {
+  static String calculateTotal(dynamic amount) {
     if (amount == null) return "0.00";
     double total = (amount * 1.00);
     return total.toStringAsFixed(0);

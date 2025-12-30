@@ -267,6 +267,12 @@ class _MriScanQueuePageState extends State<MriScanQueuePage> {
         final createdAt = record['createdAt'];
         final title = record['title'] ?? record['type'];
         final gender = patient['gender'] ?? 'other';
+        final tokenNo =
+            (patient['tokenNo'] == null ||
+                patient['tokenNo'] == 0 ||
+                patient['tokenNo'] == 'N/A')
+            ? '-'
+            : patient['tokenNo'].toString();
         final color = _genderColor(gender);
         final queueStatus = record['queueStatus'];
         final mode = (queueStatus == 'PENDING') ? 1 : 2;
@@ -326,6 +332,28 @@ class _MriScanQueuePageState extends State<MriScanQueuePage> {
                     thickness: 1.4,
                     endIndent: 25,
                     indent: 25,
+                  ),
+                  Row(
+                    //crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Token No: ',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      Text(
+                        tokenNo,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
                   Card(
                     elevation: 4,
