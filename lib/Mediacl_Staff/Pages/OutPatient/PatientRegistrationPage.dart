@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Doctor/doctor_service.dart';
 import '../../../Services/consultation_service.dart';
-import '../../../Services/fees_Service.dart';
 import '../../../Services/patient_service.dart';
 import '../../../Services/payment_service.dart';
 import '../../../Widgets/AgeDobField.dart';
-import '../../../Pages/NotificationsPage.dart';
 
 const Color customGold = Color(0xFFBF955E);
 const Color backgroundColor = Color(0xFFF9F7F2);
@@ -81,13 +81,13 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final paymentService = PaymentService();
 
   final TextEditingController fullNameController = TextEditingController();
-  final TextEditingController AccompanierNameController =
+  final TextEditingController accompanierNameController =
       TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController guardianEmailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emergencyController = TextEditingController();
-  final TextEditingController AddressController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController zipController = TextEditingController();
   final TextEditingController dobController = TextEditingController();
@@ -534,7 +534,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       isAddingNewChild = false;
 
       fullNameController.text = patient['name'] ?? '';
-      AddressController.text = patient['address']?['Address'] ?? '';
+      addressController.text = patient['address']?['Address'] ?? '';
       dobController.text = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.parse(patient['dob']));
@@ -565,7 +565,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       isAddingNewChild = true;
 
       fullNameController.clear();
-      AddressController.clear();
+      addressController.clear();
       dobController.clear();
       emailController.clear();
       guardianEmailController.clear();
@@ -638,7 +638,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     if (fullNameController.text.trim().isEmpty) missingFields.add("Full Name");
     if (dobController.text.trim().isEmpty) missingFields.add("Date of Birth");
     if (!phoneValid) missingFields.add("Phone Number (must be 10 digits)");
-    if (AddressController.text.trim().isEmpty) missingFields.add("Address");
+    if (addressController.text.trim().isEmpty) missingFields.add("Address");
     // if (ComplaintController.text.trim().isEmpty) {
     //   missingFields.add("Current Problem");
     // }
@@ -681,7 +681,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
       final patientData = {
         "name": fullNameController.text,
-        "ac_name": AccompanierNameController.text.trim(),
+        "ac_name": accompanierNameController.text.trim(),
         "staff_Id": prefs.getString('userId'),
         "phone": {
           "mobile": phoneController.text.trim(),
@@ -691,7 +691,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
           "personal": emailController.text.trim(),
           "guardian": guardianEmailController.text.trim(),
         },
-        "address": {"Address": AddressController.text.trim()},
+        "address": {"Address": addressController.text.trim()},
         "dob":
             '${(DateTime.parse(DateFormat('yyyy-MM-dd').format(dob))).toLocal().toIso8601String()}Z',
         "gender": selectedGender,
@@ -1261,7 +1261,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                       ),
                       _buildInput(
                         "Address *",
-                        AddressController,
+                        addressController,
                         maxLines: 3,
                         hint: "Street address",
                         inputFormatters: [UpperCaseTextFormatter()],
@@ -1746,6 +1746,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   );
 }
 
+//
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
