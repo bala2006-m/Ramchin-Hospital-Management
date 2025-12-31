@@ -249,7 +249,8 @@ class ConsultationService {
           // final baseCondition =
           //     (symptom && isPendingOrOngoing) ||
           //     (isPendingOrOngoing && paymentStatus);
-          final baseCondition = (symptom && isPendingOrOngoing);
+          final baseCondition =
+              (paymentStatus && symptom && isPendingOrOngoing);
 
           if (!baseCondition) continue;
 

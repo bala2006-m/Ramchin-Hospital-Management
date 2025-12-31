@@ -125,11 +125,11 @@ class _SymptomsPageState extends State<SymptomsPage> {
     diastolicController.addListener(_onFieldChange);
 
     /// 🔹 Sugar only if required
-    if (widget.mode == 1) {
-      if (widget.sugarData) {
-        sugarController.text = widget.sugar;
-      }
-    }
+    // if (widget.mode == 1) {
+    //   if (widget.sugarData) {
+    //     sugarController.text = widget.sugar;
+    //   }
+    // }
 
     sugarController.addListener(_onFieldChange);
   }

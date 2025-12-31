@@ -639,9 +639,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     if (dobController.text.trim().isEmpty) missingFields.add("Date of Birth");
     if (!phoneValid) missingFields.add("Phone Number (must be 10 digits)");
     if (AddressController.text.trim().isEmpty) missingFields.add("Address");
-    if (ComplaintController.text.trim().isEmpty) {
-      missingFields.add("Current Problem");
-    }
+    // if (ComplaintController.text.trim().isEmpty) {
+    //   missingFields.add("Current Problem");
+    // }
     if (selectedGender == null) missingFields.add("Gender");
     if (doctorIdController.text.isEmpty) {
       missingFields.add("Select Doctor");
@@ -670,10 +670,19 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       DateTime dob =
           DateTime.tryParse(dobController.text) ?? DateTime(1990, 1, 1);
 
+      if (selectedGender.toString().toLowerCase() == 'male') {
+        fullNameController.text = 'MR. ${fullNameController.text.trim()}';
+        setState(() {});
+      }
+      if (selectedGender.toString().toLowerCase() == 'female') {
+        fullNameController.text = 'MS. ${fullNameController.text.trim()}';
+        setState(() {});
+      }
+
       final patientData = {
-        "name": fullNameController.text.trim(),
+        "name": fullNameController.text,
         "ac_name": AccompanierNameController.text.trim(),
-        "staff_Id":  prefs.getString('userId'),
+        "staff_Id": prefs.getString('userId'),
         "phone": {
           "mobile": phoneController.text.trim(),
           "emergency": emergencyController.text.trim(),
@@ -1258,7 +1267,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                         inputFormatters: [UpperCaseTextFormatter()],
                       ),
                       _buildInput(
-                        "Chief Complaint *",
+                        "Chief Complaint (Optional)",
                         ComplaintController,
                         hint: "Enter complaint",
                         inputFormatters: [UpperCaseTextFormatter()],

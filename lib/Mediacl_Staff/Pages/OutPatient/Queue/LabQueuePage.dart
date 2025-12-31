@@ -19,7 +19,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
   final Color primaryColor = const Color(0xFFBF955E);
 
   Map<String, List<dynamic>> groupedRecords = {};
-  int _selectedTabIndex = 1; // default = Lab Test
+  int _selectedTabIndex = 0; // default = Lab Test
   int sugarCount = 0;
   int labCount = 0;
   int testedCount = 0;
@@ -58,7 +58,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
   }
 
   Map<String, List<dynamic>> _getFilteredRecords() {
-    if (_selectedTabIndex == 2) {
+    if (_selectedTabIndex == 1) {
       // TESTED TAB → only completed
       return Map.fromEntries(
         groupedRecords.entries
@@ -75,7 +75,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
     }
 
     // LAB TEST TAB → pending / normal queue
-    if (_selectedTabIndex == 1) {
+    if (_selectedTabIndex == 0) {
       return Map.fromEntries(
         groupedRecords.entries
             .map((entry) {
@@ -176,7 +176,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
           ),
         ),
       ),
-      body: _selectedTabIndex == 0 ? _buildSugarQueue() : _buildLabQueue(),
+      body: _buildLabQueue(),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedTabIndex,
@@ -188,10 +188,10 @@ class _LabQueuePageState extends State<LabQueuePage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bloodtype),
-            label: 'Sugar Test',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.bloodtype),
+          //   label: 'Sugar Test',
+          // ),
           BottomNavigationBarItem(icon: Icon(Icons.science), label: 'Lab Test'),
           BottomNavigationBarItem(icon: Icon(Icons.verified), label: 'Tested'),
         ],
@@ -343,7 +343,7 @@ class _LabQueuePageState extends State<LabQueuePage> {
         final sugarRecords = records.where((item) {
           print('itemss $item');
           return item['paymentStatus'] == true &&
-              item['symptoms'] == false &&
+              item['symptoms'] == true &&
               item['status'] == 'PENDING' &&
               item['sugerTestQueue'] == true &&
               item['sugerTest'] == true;

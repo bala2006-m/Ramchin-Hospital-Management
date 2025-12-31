@@ -307,7 +307,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                   ),
                   const SizedBox(width: 12),
                   _TopTab(
-                    label: 'Before',
+                    label: 'Previous',
                     selected: queueFilter == 'Before',
                     onTap: () {
                       setState(() {

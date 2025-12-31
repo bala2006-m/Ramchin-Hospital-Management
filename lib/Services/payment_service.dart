@@ -99,7 +99,7 @@ class PaymentService {
     try {
       final hospitalId = await getHospitalId();
       final response = await http.get(
-        Uri.parse('$baseUrl/payments/all/pending/$hospitalId'),
+        Uri.parse('$baseUrl/payments/all/pendingFee/$hospitalId'),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -191,7 +191,7 @@ class PaymentService {
     try {
       final hospitalId = await getHospitalId();
       final response = await http.get(
-        Uri.parse('$baseUrl/payments/all/paid/$hospitalId'),
+        Uri.parse('$baseUrl/payments/all/paidFee/$hospitalId'),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

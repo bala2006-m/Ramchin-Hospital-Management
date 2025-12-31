@@ -38,6 +38,25 @@ Future<pw.Document> buildPdf({
   required TextEditingController cellController,
   required TextEditingController dobController,
 }) async {
+  print(fee);
+  final consultation = fee['Consultation'];
+  final temperature = consultation['temperature'].toString();
+  final bloodPressure = consultation['bp'] ?? '_';
+  final sugar = consultation['sugar'] ?? '_';
+  final height = consultation['height'].toString() ?? '_';
+  final weight = consultation['weight'].toString() ?? '_';
+  final BMI = consultation['BMI'].toString() ?? '_';
+  final PK = consultation['PK'].toString() ?? '_';
+  final SpO2 = consultation['SPO2'].toString() ?? '_';
+  final tokenNo = fee['Consultation']?['tokenNo'];
+
+  final tokenText =
+      (tokenNo == null ||
+          tokenNo.toString().isEmpty ||
+          tokenNo.toString() == '0')
+      ? '-'
+      : tokenNo.toString();
+
   final pdf = pw.Document();
   final blue = PdfColor.fromHex("#0A3D91");
   // final lightBlue = PdfColor.fromHex("#1E5CC4");
@@ -85,6 +104,129 @@ Future<pw.Document> buildPdf({
         ),
       );
     }
+  }
+
+  pw.Widget vitalTile({required String label, required String value}) {
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.SizedBox(
+          width: 40,
+          child: pw.Text(
+            "$label :",
+            style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
+          ),
+        ),
+
+        pw.Expanded(
+          child: pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.grey800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool isValid(String? value) {
+    return value != null &&
+        value.trim() != 'null' &&
+        value.trim().isNotEmpty &&
+        value.trim() != '0' &&
+        value.trim() != 'N/A' &&
+        value.trim() != '-' &&
+        value.trim() != '_' &&
+        value.trim() != '-mg/dL';
+  }
+
+  bool hasAnyVital({
+    String? temperature,
+    String? bloodPressure,
+    String? sugar,
+    String? height,
+    String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
+  }) {
+    return isValid(temperature) ||
+        isValid(bloodPressure) ||
+        isValid(sugar) ||
+        isValid(height) ||
+        isValid(weight) ||
+        isValid(BMI) ||
+        isValid(PK) ||
+        isValid(SpO2);
+  }
+
+  pw.Widget buildVitalsDetailsCards({
+    String? temperature,
+    String? bloodPressure,
+    String? sugar,
+    String? height,
+    String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
+  }) {
+    pw.Widget buildColumn(List<pw.Widget> children) {
+      return pw.Expanded(
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: children,
+        ),
+      );
+    }
+
+    return pw.Column(
+      children: [
+        pw.SizedBox(height: 5),
+        pw.Divider(),
+
+        pw.Center(
+          child: pw.Text(
+            "VITALS",
+            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+
+        pw.SizedBox(height: 6),
+        if (isValid(bloodPressure))
+          vitalTile(label: "BP", value: bloodPressure!),
+
+        if (isValid(sugar)) vitalTile(label: "Sugar", value: "$sugar mg/dL"),
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // LEFT TABLE
+            buildColumn([
+              if (isValid(temperature))
+                vitalTile(label: "Temp", value: "$temperature °F"),
+
+              if (isValid(PK)) vitalTile(label: "PR", value: "$PK bpm"),
+              if (isValid(SpO2)) vitalTile(label: "SpO₂", value: "$SpO2 %"),
+            ]),
+
+            pw.SizedBox(width: 10),
+
+            // RIGHT TABLE
+            buildColumn([
+              if (isValid(weight))
+                vitalTile(label: "Weight", value: "$weight kg"),
+
+              if (isValid(height))
+                vitalTile(label: "Height", value: "$height cm"),
+
+              if (isValid(BMI)) vitalTile(label: "BMI", value: BMI!),
+            ]),
+          ],
+        ),
+      ],
+    );
   }
 
   pdf.addPage(
@@ -159,31 +301,125 @@ Future<pw.Document> buildPdf({
               "PATIENT INFO",
               style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
             ),
-            pw.Text(
-              "Name : ${nameController.text}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
-            pw.Text(
-              "PID  : ${fee['Patient']['id']}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
-            pw.Text(
-              "Phone: ${cellController.text}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
-            pw.Text(
-              "Age  : ${FeesPaymentPageState.calculateAge(dobController.text)}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
-            pw.Text(
-              "Sex  : ${fee['Patient']['gender']}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
-            pw.Text(
-              "Date : ${FeesPaymentPageState.getFormattedDate(DateTime.now().toString())}",
-              style: pw.TextStyle(fontSize: 9),
-            ),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.white),
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                      child: pw.Text(
+                        "Token No",
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(width: 1),
+                    pw.Container(
+                      width: 18,
+                      height: 18,
+                      alignment: pw.Alignment.center,
+                      decoration: pw.BoxDecoration(
+                        shape: pw.BoxShape.circle,
+                        color: PdfColors.black,
+                      ),
+                      child: pw.Container(
+                        width: 16,
+                        height: 16,
+                        alignment: pw.Alignment.center,
+                        decoration: pw.BoxDecoration(
+                          shape: pw.BoxShape.circle,
+                          color: PdfColors.white,
+                        ),
+                        child: pw.Text(
+                          tokenText,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
+                pw.TableRow(
+                  children: [
+                    pw.Text("Name :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      nameController.text,
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Text("PID :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      fee['Patient']['id'].toString(),
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Text("Phone :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      cellController.text,
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Text("Age :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      FeesPaymentPageState.calculateAge(dobController.text),
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                    pw.Text("Sex :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      fee['Patient']['gender'] ?? '-',
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Text("Date :", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      FeesPaymentPageState.getFormattedDate(
+                        DateTime.now().toString(),
+                      ),
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (fee['type'] == 'REGISTRATIONFEE')
+              if (hasAnyVital(
+                temperature: temperature,
+                bloodPressure: bloodPressure,
+                sugar: sugar,
+                height: height,
+                weight: weight,
+                BMI: BMI,
+                PK: PK,
+                SpO2: SpO2,
+              ))
+                buildVitalsDetailsCards(
+                  temperature: temperature,
+                  bloodPressure: bloodPressure,
+                  sugar: sugar,
+                  height: height,
+                  weight: weight,
+                  BMI: BMI,
+                  PK: PK,
+                  SpO2: SpO2,
+                ),
             pw.Divider(),
 
             // HEADLINE
@@ -229,7 +465,9 @@ Future<pw.Document> buildPdf({
                 },
                 children: buildFeeRows(
                   registrationFee: fee['Consultation']?['registrationFee'],
-                  consultationFee: fee['Consultation']?['consultationFee'],
+                  consultationFee:
+                      fee['Consultation']?['consultationFee'] +
+                      fee['Consultation']?['registrationFee'],
                   emergencyFee: fee['Consultation']?['emergencyFee'],
                   sugarTestFee: fee['Consultation']?['sugarTestFee'],
                 ),
@@ -493,7 +731,7 @@ List<pw.TableRow> buildFeeRows({
   }
 
   // 🔹 Fee Rows
-  addRow("Registration Fee", registrationFee);
+  //addRow("Registration Fee", registrationFee);
   addRow("Consultation Fee", consultationFee);
   addRow("Emergency Fee", emergencyFee);
   addRow("Sugar Test Fee", sugarTestFee);

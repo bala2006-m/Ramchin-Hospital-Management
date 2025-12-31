@@ -38,6 +38,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   String? logo;
   String? hospitalName;
   String? hospitalPlace;
+  bool _isLoading = false;
+  bool _isBuildingPdf = false;
 
   late TextEditingController cellController;
   late TextEditingController nameController;
@@ -162,6 +164,99 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     }
   }
 
+  Future<void> _showBillConfirmationDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        bool isPrinting = false;
+
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              title: const Text(
+                "Payment Successful",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text("Do you want to print the bill now?"),
+              actions: [
+                /// ❌ NO → refresh
+                TextButton(
+                  onPressed: isPrinting
+                      ? null
+                      : () {
+                          Navigator.pop(ctx);
+                          Navigator.pop(context, true); // ✅ refresh
+                        },
+                  child: const Text("No"),
+                ),
+
+                /// ✅ YES → print or cancel → refresh ALWAYS
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  onPressed: isPrinting
+                      ? null
+                      : () async {
+                          setDialogState(() => isPrinting = true);
+                          Navigator.pop(ctx);
+
+                          setState(() => _isBuildingPdf = true);
+
+                          try {
+                            final pdf = await buildPdf(
+                              cellController: cellController,
+                              dobController: dobController,
+                              fee: widget.fee,
+                              hospitalName: hospitalName!,
+                              hospitalPlace: hospitalPlace!,
+                              nameController: nameController,
+                              logo: logo!,
+                            );
+
+                            if (mounted) {
+                              setState(() => _isBuildingPdf = false);
+                            }
+
+                            // 🔑 user may print OR cancel – we don't care
+                            await Printing.layoutPdf(
+                              onLayout: (format) async => pdf.save(),
+                            );
+                          } catch (e) {
+                            debugPrint("Print error: $e");
+                          } finally {
+                            if (mounted) {
+                              // 🔥 ALWAYS refresh parent
+                              Navigator.pop(context, true);
+                            }
+                          }
+                        },
+                  child: isPrinting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          "Yes, Print",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _handlePayment() async {
     final amount = widget.fee['amount']?.toDouble() ?? 0.0;
     final paymentId = widget.fee['id'];
@@ -224,7 +319,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('✅ Payment Successful')));
-      Navigator.pop(context, true);
+      //Navigator.pop(context, true);
+      await _showBillConfirmationDialog();
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -309,14 +405,64 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   //     print(e);
   //   }
   // }
+  bool isValid(String? value) {
+    return value != null &&
+        value.trim() != 'null' &&
+        value.trim().isNotEmpty &&
+        value.trim() != '0' &&
+        value.trim() != 'N/A' &&
+        value.trim() != '-' &&
+        value.trim() != '_' &&
+        value.trim() != '-mg/dL';
+  }
+
+  bool hasAnyVital({
+    String? temperature,
+    String? bloodPressure,
+    String? sugar,
+    String? height,
+    String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
+  }) {
+    return isValid(temperature) ||
+        isValid(bloodPressure) ||
+        isValid(sugar) ||
+        isValid(height) ||
+        isValid(weight) ||
+        isValid(BMI) ||
+        isValid(PK) ||
+        isValid(SpO2);
+  }
+
+  bool _isValid(String? value) {
+    return value != null &&
+        value.trim() != 'null' &&
+        value.trim().isNotEmpty &&
+        value.trim() != '0' &&
+        value.trim() != 'N/A' &&
+        value.trim() != '-' &&
+        value.trim() != '_' &&
+        value.trim() != '-mg/dL';
+  }
 
   @override
   Widget build(BuildContext context) {
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
     final consultation = widget.fee['Consultation'];
+    final temperature = consultation['temperature'].toString();
+    final bloodPressure = consultation['bp'] ?? '_';
+    final sugar = consultation['sugar'] ?? '_';
+    final height = consultation['height'].toString() ?? '_';
+    final weight = consultation['weight'].toString() ?? '_';
+    final BMI = consultation['BMI'].toString() ?? '_';
+    final PK = consultation['PK'].toString() ?? '_';
+    final SpO2 = consultation['SPO2'].toString() ?? '_';
 
     final num? registrationFee = consultation?['registrationFee'];
-    final num? consultationFee = consultation?['consultationFee'];
+    final num? consultationFee =
+        consultation?['consultationFee'] + registrationFee;
     final num? emergencyFee = consultation?['emergencyFee'];
     final num? sugarTestFee = consultation?['sugarTestFee'];
     final tokenNo =
@@ -530,6 +676,45 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   const Divider(thickness: 1.2, height: 30),
 
                   // 💳 Fee Details
+                  if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
+                    Center(
+                      child: const Text(
+                        "Vitals",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    const Divider(thickness: 1.2, height: 30),
+
+                    if (widget.fee['type'] == 'REGISTRATIONFEE')
+                      if (hasAnyVital(
+                        temperature: temperature,
+                        bloodPressure: bloodPressure,
+                        sugar: sugar,
+                        height: height,
+                        weight: weight,
+                        BMI: BMI,
+                        PK: PK,
+                        SpO2: SpO2,
+                      ))
+                        _buildVitalsDetails(
+                          temperature: temperature,
+                          bloodPressure: bloodPressure,
+                          sugar: sugar,
+                          height: height,
+                          weight: weight,
+                          BMI: BMI,
+                          PK: PK,
+                          SpO2: SpO2,
+                        ),
+
+                    const Divider(thickness: 1.2, height: 30),
+                  ],
+
+                  // 💳 Fee Details
                   Center(
                     child: const Text(
                       "Fee Summary",
@@ -565,12 +750,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     // ),
                     Column(
                       children: [
-                        feeRowWithRemove(
-                          title: "Registration Fee",
-                          amount: registrationFee,
-                          removable: false, // ❌ disabled
-                        ),
-
+                        // feeRowWithRemove(
+                        //   title: "Registration Fee",
+                        //   amount: registrationFee,
+                        //   removable: false, // ❌ disabled
+                        // ),
                         feeRowWithRemove(
                           title: "Consultation Fee",
                           amount: consultationFee,
@@ -644,103 +828,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                         const SizedBox(height: 8),
                       ];
                     }),
-
-                    //   ...tests.asMap().entries.map((entry) {
-                    //     final index = entry.key;
-                    //     final test = entry.value;
-                    //     final bool canRemove = tests.length > 1;
-                    //
-                    //     return Row(
-                    //       children: [
-                    //         Expanded(
-                    //           child: Text(
-                    //             test["title"],
-                    //             style: const TextStyle(fontSize: 15),
-                    //           ),
-                    //         ),
-                    //         Text("₹ ${test["amount"]}"),
-                    //         // TextButton.icon(
-                    //         //   onPressed: () {
-                    //         //     _updateTestAndScan();
-                    //         //   },
-                    //         //   icon: const Icon(
-                    //         //     Icons.remove_circle_outline,
-                    //         //     size: 20,
-                    //         //     color: Colors.redAccent,
-                    //         //   ),
-                    //         //   label: const Text(
-                    //         //     "",
-                    //         //     style: TextStyle(
-                    //         //       color: Colors.redAccent,
-                    //         //       fontSize: 13,
-                    //         //     ),
-                    //         //   ),
-                    //         // ),
-                    //       ],
-                    //     );
-                    //   }),
                   ],
 
-                  // _billRow("Discount", "₹0.00"),
-                  // _billRow(
-                  //   "Tax (5%)",
-                  //   "₹${_calculateTax(widget.fee['amount'])}",
-                  // ),
-
-                  // 💳 Fee Details
-                  // Center(
-                  //   child: const Text(
-                  //     "Fee Summary",
-                  //     style: TextStyle(
-                  //       fontWeight: FontWeight.w600,
-                  //       fontSize: 16,
-                  //       color: Colors.black87,
-                  //     ),
-                  //   ),
-                  // ),
-                  // const Divider(thickness: 1.5, height: 25),
-                  // const SizedBox(height: 12),
-                  //
-                  // if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
-                  //   _billRow("Registration Fee", "₹ ${feeController.text}"),
-                  // ] else if (widget.fee['type'] ==
-                  //     'TESTINGFEESANDSCANNINGFEE') ...[
-                  //   Text(
-                  //     "${widget.fee['reason']}",
-                  //     style: const TextStyle(
-                  //       fontSize: 15,
-                  //       fontWeight: FontWeight.w500,
-                  //       color: Colors.black87,
-                  //     ),
-                  //   ),
-                  //   const SizedBox(height: 8),
-                  //   if (widget.patient['TestingAndScanning']?['selectedOptions'] !=
-                  //           null &&
-                  //       widget
-                  //           .patient['TestingAndScanning']?['selectedOptions']
-                  //           .isNotEmpty)
-                  //     ...widget
-                  //         .patient['TestingAndScanning']?['selectedOptions']
-                  //         .map<Widget>(
-                  //           (test) => _billRow(
-                  //             test['name'] ?? 'Unknown Test',
-                  //             "₹ ${(test['amount'] ?? 0).toString()}",
-                  //           ),
-                  //         )
-                  //         .toList()
-                  //   else
-                  //     const Text(
-                  //       "No tests or scans selected.",
-                  //       style: TextStyle(color: Colors.grey),
-                  //     ),
-                  //   const Divider(thickness: 1.2, height: 25),
-                  //   _billRow("Total", "₹ ${feeController.text}"),
-                  // ] else ...[
-                  //   _billRow(
-                  //     "${widget.fee['reason']}",
-                  //     "₹ ${feeController.text}",
-                  //   ),
-                  // ],
                   const Divider(thickness: 1.5, height: 25),
 
                   // 🧮 Total Amount
@@ -854,27 +943,50 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                           children: [
                             // 🔹 Print Button
                             ElevatedButton.icon(
-                              onPressed: () async {
-                                final pdf = await buildPdf(
-                                  cellController: cellController,
-                                  dobController: dobController,
-                                  fee: widget.fee,
-                                  hospitalName: hospitalName!,
-                                  hospitalPlace: hospitalPlace!,
-                                  nameController: nameController,
-                                  logo: logo!,
-                                );
-                                await Printing.layoutPdf(
-                                  onLayout: (format) async => pdf.save(),
-                                );
-                              },
-                              icon: const Icon(
-                                Icons.print,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                "Print ",
-                                style: TextStyle(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () async {
+                                      setState(() {
+                                        _isLoading = true;
+                                        _isBuildingPdf = true;
+                                      });
+
+                                      try {
+                                        final pdf = await buildPdf(
+                                          cellController: cellController,
+                                          dobController: dobController,
+                                          fee: widget.fee,
+                                          hospitalName: hospitalName!,
+                                          hospitalPlace: hospitalPlace!,
+                                          nameController: nameController,
+                                          logo: logo!,
+                                        );
+
+                                        await Printing.layoutPdf(
+                                          onLayout: (format) async =>
+                                              pdf.save(),
+                                        );
+                                      } finally {
+                                        setState(() => _isLoading = false);
+                                        setState(() => _isBuildingPdf = false);
+                                      }
+                                    },
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.print,
+                                      color: Colors.white,
+                                    ),
+                              label: Text(
+                                _isLoading ? "Printing..." : "Print",
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                 ),
@@ -891,6 +1003,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                 elevation: 5,
                               ),
                             ),
+
                             InkWell(
                               borderRadius: BorderRadius.circular(10),
                               onTap: () async {
@@ -921,6 +1034,14 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                         widget
                                             .fee['Consultation']?['sugarTestFee'] ??
                                         0,
+                                    temperature: temperature,
+                                    bloodPressure: bloodPressure,
+                                    sugar: sugar,
+                                    height: height,
+                                    weight: weight,
+                                    BMI: BMI,
+                                    PK: PK,
+                                    SpO2: SpO2,
                                   );
                                 } else if (widget.fee['type'] ==
                                     'TESTINGFEESANDSCANNINGFEE') {
@@ -1022,13 +1143,87 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           ),
 
           // 🌀 Loading Overlay
-          if (_isProcessing)
+          // if (_isProcessing)
+          //   Container(
+          //     color: Colors.black38,
+          //     child: const Center(
+          //       child: CircularProgressIndicator(color: Colors.white),
+          //     ),
+          //   ),
+          // 🌀 Loading Overlay (Payment OR PDF building)
+          if (_isProcessing || _isBuildingPdf)
             Container(
               color: Colors.black38,
               child: const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVitalsDetails({
+    String? temperature,
+    String? bloodPressure,
+    String? sugar,
+    String? height,
+    String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Header
+        const SizedBox(height: 8),
+
+        if (_isValid(temperature)) _vitalRow("Temperature", "$temperature °F"),
+
+        if (_isValid(bloodPressure)) _vitalRow("BP", bloodPressure!),
+
+        if (_isValid(sugar)) _vitalRow("Sugar", "$sugar mg/dL"),
+
+        if (_isValid(weight)) _vitalRow("Weight", "$weight kg"),
+
+        if (_isValid(height)) _vitalRow("Height", "$height cm"),
+
+        if (_isValid(BMI)) _vitalRow("BMI", BMI!),
+
+        if (_isValid(PK)) _vitalRow("PR", "$PK bpm"),
+
+        if (_isValid(SpO2)) _vitalRow("SpO₂", "$SpO2 %"),
+      ],
+    );
+  }
+
+  Widget _vitalRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              "$label :",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
         ],
       ),
     );
