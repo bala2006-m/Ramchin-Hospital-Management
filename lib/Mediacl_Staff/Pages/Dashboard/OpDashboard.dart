@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
-import '../OutPatient/PatientRegistrationPage.dart';
+import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../OutPatient/Queue/InjectionQueuePage.dart';
 import '../OutPatient/Queue/OpQueuePage.dart';
 import '../OutPatient/Queue/SymptomsQueuePage.dart';

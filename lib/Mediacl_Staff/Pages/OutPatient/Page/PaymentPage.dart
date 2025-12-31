@@ -178,7 +178,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                 borderRadius: BorderRadius.circular(14),
               ),
               title: const Text(
-                "Payment Successful",
+                "Payment Successfully",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: const Text("Do you want to print the bill now?"),
@@ -194,7 +194,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   child: const Text("No"),
                 ),
 
-                /// ✅ YES → print or cancel → refresh ALWAYS
+                /// ✅ YES → print or cancel → refresh ALWAYS refresh ALWAYS
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,

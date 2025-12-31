@@ -8,7 +8,7 @@ import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePag
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOutPatientQueuePage.dart';
 import '../../Mediacl_Staff/Pages/Medical/MedicalQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Page/GynPage.dart';
-import '../../Mediacl_Staff/Pages/OutPatient/PatientRegistrationPage.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/AbdomenQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/CtScanQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/DopplerQueuePage.dart';

@@ -8,6 +8,7 @@ import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
 import '../../OutPatient/Report/ReportCard.dart';
 import '../../OutPatient/Report/ScanReportPage.dart';
+import '../widgets/doctor_description_edit.dart';
 import 'DoctorPrescriptionPage.dart';
 //import 'DrOpDashboard/DrOutPatientQueuePage.dart';
 import 'ScanningPage.dart';
@@ -491,7 +492,15 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                     ],
                   ),
                 )
-              : _buildEditPlaceholder(),
+              : EditTestScanTab(
+                  items: widget.consultation['TeatingAndScanningPatient'] ?? [],
+                  onChanged: (updatedList) {
+                    setState(() {
+                      widget.consultation['TeatingAndScanningPatient'] =
+                          updatedList;
+                    });
+                  },
+                ),
         ),
       );
     }
@@ -569,7 +578,15 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                 ],
               ),
             )
-          : _buildEditPlaceholder(),
+          : EditTestScanTab(
+              items: widget.consultation['TeatingAndScanningPatient'] ?? [],
+              onChanged: (updatedList) {
+                setState(() {
+                  widget.consultation['TeatingAndScanningPatient'] =
+                      updatedList;
+                });
+              },
+            ),
     );
   }
 

@@ -78,6 +78,33 @@ class TestingScanningService {
     }
   }
 
+  Future<List<dynamic>> getAllEditTestingAndScanning() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final hospitalId = await getHospitalId();
+      final doctorId = prefs.getString('assistantDoctorId');
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/testing_and_scanning_patient/all/pendingPaymentStatus/$hospitalId/$doctorId',
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['status'] == 'success' && decoded['data'] != null) {
+          return decoded['data'] as List<dynamic>;
+        } else {
+          return [];
+        }
+      } else {
+        throw Exception('Failed to fetch ECG queue: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching ECG queue: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> updateTestAndScan(int id) async {
     try {
       final response = await http.patch(

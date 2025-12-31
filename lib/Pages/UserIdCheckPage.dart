@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../Mediacl_Staff/Pages/OutPatient/PatientRegistrationPage.dart';
+import '../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../Services/patient_service.dart';
 import 'DrawerPages/ReceptionDeskPage.dart';
 
