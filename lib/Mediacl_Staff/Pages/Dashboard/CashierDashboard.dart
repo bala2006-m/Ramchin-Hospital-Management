@@ -6,6 +6,7 @@ import '../../../Admin/Pages/Accounts/AccountsDrawerPage.dart';
 import '../../../Admin/Pages/Accounts/ExpensePage.dart';
 import '../../../Admin/Pages/Accounts/FinancePage.dart';
 import '../../../Admin/Pages/Accounts/IncomeExpensePage.dart';
+import '../../../Admin/Pages/Accounts/accounts_report.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
 
@@ -212,7 +213,8 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                   if (cashierPermissionIds.contains(21) ||
                       cashierPermissionIds.contains(22) ||
                       cashierPermissionIds.contains(23) ||
-                      cashierPermissionIds.contains(24))
+                      cashierPermissionIds.contains(24) ||
+                      cashierPermissionIds.contains(25))
                     Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(22),
@@ -245,7 +247,8 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                             if (!cashierPermissionIds.contains(21) &&
                                 !cashierPermissionIds.contains(22) &&
                                 !cashierPermissionIds.contains(23) &&
-                                !cashierPermissionIds.contains(24))
+                                !cashierPermissionIds.contains(23) &&
+                                !cashierPermissionIds.contains(25))
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
@@ -311,7 +314,8 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                               ),
                             const SizedBox(height: 25),
                             if (cashierPermissionIds.contains(23) ||
-                                cashierPermissionIds.contains(24))
+                                cashierPermissionIds.contains(24) ||
+                                cashierPermissionIds.contains(25))
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
@@ -339,6 +343,20 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => const FinancePage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (cashierPermissionIds.contains(25))
+                                    _buildActionItem(
+                                      Icons.receipt_long,
+                                      "Report",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const AccountsReport(),
                                           ),
                                         );
                                       },

@@ -45,6 +45,25 @@ class PaymentService {
     }
   }
 
+  Future<List<dynamic>> getOnePayments(int id) async {
+    final hospitalId = await getHospitalId();
+    final response = await http.get(
+      Uri.parse('$baseUrl/payments/one/$hospitalId/$id'),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      print('jsonResponse $jsonResponse');
+      if (jsonResponse.containsKey('data') && jsonResponse['data'] is List) {
+        return jsonResponse['data'];
+      } else {
+        throw Exception('Invalid response format: missing "data" list');
+      }
+    } else {
+      throw Exception('Failed to fetch payments: ${response.body}');
+    }
+  }
+
   // Get payment by id
   Future<Map<String, dynamic>?> getPaymentById(int id) async {
     final response = await http.get(Uri.parse('$baseUrl/$id'));

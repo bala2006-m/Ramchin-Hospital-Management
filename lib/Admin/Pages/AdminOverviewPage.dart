@@ -110,6 +110,7 @@ class _AdminOverviewPageState extends State<AdminOverviewPage> {
     final todayConsultations = consultation
         .where((c) => isToday(c['createdAt']))
         .toList();
+    //print('todayConsultations $todayConsultations');
     final todayTesting = testingAndScanning
         .where((t) => isToday(t['createdAt']))
         .toList();

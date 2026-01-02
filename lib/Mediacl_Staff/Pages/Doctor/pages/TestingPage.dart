@@ -14,11 +14,13 @@ import '../../../../utils/utils.dart';
 class TestingPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
   final List<Map<String, dynamic>> testOptionName;
+  final String role;
 
   const TestingPage({
     super.key,
     required this.consultation,
     required this.testOptionName,
+    required this.role,
   });
 
   @override
@@ -37,6 +39,7 @@ class _TestingPageState extends State<TestingPage> {
 
   String? _dateTime;
   int _expandedIndex = -1;
+  final Map<String, TextEditingController> _descControllers = {};
 
   final Map<String, Map<String, dynamic>> savedTests = {};
   final Map<String, bool> showAllMap = {};
@@ -123,7 +126,10 @@ class _TestingPageState extends State<TestingPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final doctorId = prefs.getString('userId') ?? '';
+
+      final doctorId = widget.role == 'doctor'
+          ? prefs.getString('userId') ?? ''
+          : prefs.getString('assistantDoctorId') ?? '';
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
@@ -459,9 +465,17 @@ class _TestingPageState extends State<TestingPage> {
     final Set<String> selectedOptions =
         (savedTests[testName]?['options'] ?? <String>{}) as Set<String>;
 
-    final descController = TextEditingController(
-      text: savedTests[testName]?['description'] ?? '',
+    // final descController = TextEditingController(
+    //   text: savedTests[testName]?['description'] ?? '',
+    // );
+    _descControllers.putIfAbsent(
+      testName,
+      () => TextEditingController(
+        text: savedTests[testName]?['description'] ?? '',
+      ),
     );
+
+    final descController = _descControllers[testName]!;
 
     final Map<String, dynamic> existingResult = (widget.testOptionName)
         .firstWhere(
@@ -733,11 +747,24 @@ class _TestingPageState extends State<TestingPage> {
               ),
               maxLines: 2,
               onChanged: (value) {
-                savedTests[testName] = {
-                  'options': savedTests[testName]?['options'] ?? <String>{},
-                  'description': value,
-                  'totalAmount': savedTests[testName]?['totalAmount'] ?? 0,
-                };
+                // savedTests[testName] = {
+                //   'options': savedTests[testName]?['options'] ?? <String>{},
+                //   'description': value,
+                //   'totalAmount': savedTests[testName]?['totalAmount'] ?? 0,
+                // };
+                setState(() {
+                  final existing = savedTests[testName] ?? {};
+
+                  savedTests[testName] = {
+                    'options': existing['options'] ?? selectedOptions,
+                    'selectedOptionsAmount':
+                        existing['selectedOptionsAmount'] ?? <String, int>{},
+                    'description': value,
+                    'totalAmount':
+                        existing['totalAmount'] ??
+                        _calculateTotalAmount(test, selectedOptions),
+                  };
+                });
               },
             ),
           ),

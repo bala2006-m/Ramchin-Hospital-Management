@@ -697,8 +697,13 @@ import '../../../../utils/utils.dart';
 
 class ScanningPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
+  final String role;
 
-  const ScanningPage({super.key, required this.consultation});
+  const ScanningPage({
+    super.key,
+    required this.consultation,
+    required this.role,
+  });
 
   @override
   State<ScanningPage> createState() => _ScanningPageState();
@@ -713,6 +718,7 @@ class _ScanningPageState extends State<ScanningPage> {
   int _expandedIndex = -1;
   bool scanningTesting = false;
   late String _dateTime;
+  final Map<String, TextEditingController> _descControllers = {};
 
   final Map<String, Map<String, dynamic>> savedScans = {};
   final Map<String, bool> showAllMap = {};
@@ -776,7 +782,9 @@ class _ScanningPageState extends State<ScanningPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final doctorId = prefs.getString('userId') ?? '';
+      final doctorId = widget.role == 'doctor'
+          ? prefs.getString('userId') ?? ''
+          : prefs.getString('assistantDoctorId') ?? '';
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
@@ -950,8 +958,14 @@ class _ScanningPageState extends State<ScanningPage> {
     final isExpanded = _expandedIndex == index;
     final selectedOptions =
         (savedScans[scanName]?['options'] ?? <String>{}) as Set<String>;
-    final descController = TextEditingController(
-      text: savedScans[scanName]?['description'] ?? '',
+    // final descController = TextEditingController(
+    //   text: savedScans[scanName]?['description'] ?? '',
+    // );
+    final descController = _descControllers.putIfAbsent(
+      scanName,
+      () => TextEditingController(
+        text: savedScans[scanName]?['description'] ?? '',
+      ),
     );
 
     final bool showAll = showAllMap[scanName] ?? false;
@@ -1059,12 +1073,27 @@ class _ScanningPageState extends State<ScanningPage> {
                 filled: true,
                 fillColor: Colors.grey.shade50,
               ),
+              // onChanged: (val) {
+              //   savedScans[scanName] = {
+              //     'options': selectedOptions,
+              //     'description': val,
+              //     'totalAmount': _calculateTotalAmount(scan, selectedOptions),
+              //   };
+              // },
               onChanged: (val) {
-                savedScans[scanName] = {
-                  'options': selectedOptions,
-                  'description': val,
-                  'totalAmount': _calculateTotalAmount(scan, selectedOptions),
-                };
+                setState(() {
+                  final existing = savedScans[scanName] ?? {};
+
+                  savedScans[scanName] = {
+                    'options': existing['options'] ?? selectedOptions,
+                    'selectedOptionsAmount':
+                        existing['selectedOptionsAmount'] ?? <String, int>{},
+                    'description': val,
+                    'totalAmount':
+                        existing['totalAmount'] ??
+                        _calculateTotalAmount(scan, selectedOptions),
+                  };
+                });
               },
             ),
           ),

@@ -64,6 +64,36 @@ class ConsultationService {
       final response = await http.get(
         Uri.parse('$baseUrl/consultations/all/$hospitalId'),
       );
+      print('respose ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // ✅ Decode JSON response first
+        final decoded = jsonDecode(response.body);
+
+        // ✅ FIX: Extract list safely from JSON object
+        final List<dynamic> rawList;
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          rawList = decoded['data']; // data key contains list
+        } else if (decoded is List) {
+          rawList = decoded; // already a list
+        } else {
+          throw Exception('Unexpected JSON structure: $decoded');
+        }
+
+        return rawList;
+      } else {
+        throw Exception('Failed to fetch consultations: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching consultations: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAllConsultationsHistory(String patientId) async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/history/$hospitalId/$patientId'),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // ✅ Decode JSON response first

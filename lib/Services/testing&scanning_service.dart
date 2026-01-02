@@ -81,9 +81,9 @@ class TestingScanningService {
   Future<List<dynamic>> getAllEditTestingAndScanning() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final hospitalId = await getHospitalId();
       final doctorId = prefs.getString('assistantDoctorId');
+
       final response = await http.get(
         Uri.parse(
           '$baseUrl/testing_and_scanning_patient/all/pendingPaymentStatus/$hospitalId/$doctorId',
@@ -92,16 +92,25 @@ class TestingScanningService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
+        print('decoded ${decoded['data']}');
+
         if (decoded['status'] == 'success' && decoded['data'] != null) {
-          return decoded['data'] as List<dynamic>;
+          // Filter only paymentStatus == false
+          final unpaidRecords = (decoded['data'] as List<dynamic>)
+              .where((item) => item['paymentStatus'] == false)
+              .toList();
+
+          return unpaidRecords;
         } else {
           return [];
         }
       } else {
-        throw Exception('Failed to fetch ECG queue: ${response.body}');
+        throw Exception(
+          'Failed to fetch testing/scanning queue: ${response.body}',
+        );
       }
     } catch (e) {
-      throw Exception('Error fetching ECG queue: $e');
+      throw Exception('Error fetching testing/scanning queue: $e');
     }
   }
 
@@ -227,6 +236,26 @@ class TestingScanningService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(responseBody);
+      } else {
+        return {
+          "status": "failed",
+          "message": "Server returned ${response.statusCode}",
+        };
+      }
+    } catch (e) {
+      return {"status": "failed", "message": e.toString()};
+    }
+  }
+
+  /// DELETE (PRISMA DELETE)
+  Future<Map<String, dynamic>> deleteTesting(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/testing_and_scanning_patient/deleteById/$id"),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
       } else {
         return {
           "status": "failed",

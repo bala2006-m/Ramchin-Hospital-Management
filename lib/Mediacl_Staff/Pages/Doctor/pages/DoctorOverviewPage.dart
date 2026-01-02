@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Services/consultation_service.dart';
@@ -69,12 +70,17 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
   }
 
   void _countOverall(List<dynamic> list) {
-    pending = list.where((c) => c['status'] == 'pending').length;
+    pending = list.where((c) => c['status'].toLowerCase() == 'pending').length;
     ongoing = list
-        .where((c) => ['ongoing', 'endprocessing'].contains(c['status']))
+        .where(
+          (c) =>
+              ['ongoing', 'endprocessing'].contains(c['status'].toLowerCase()),
+        )
         .length;
-    completed = list.where((c) => c['status'] == 'completed').length;
-    cancel = list.where((c) => c['status'] == 'cancelled').length;
+    completed = list
+        .where((c) => c['status'].toLowerCase() == 'completed')
+        .length;
+    cancel = list.where((c) => c['status'].toLowerCase() == 'cancelled').length;
     reg = list.length;
   }
 
@@ -82,17 +88,33 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
     final now = DateTime.now();
 
     final today = list.where((c) {
-      final d = DateTime.tryParse(c['createdAt'] ?? '');
-      if (d == null) return false;
+      if (c['createdAt'] == null) return false;
+
+      DateTime? d;
+      try {
+        d = DateFormat('yyyy-MM-dd hh:mm a').parse(c['createdAt']);
+      } catch (_) {
+        return false;
+      }
+
       return d.year == now.year && d.month == now.month && d.day == now.day;
     }).toList();
 
-    tPending = today.where((c) => c['status'] == 'pending').length;
-    tOngoing = today
-        .where((c) => ['ongoing', 'endprocessing'].contains(c['status']))
+    tPending = today
+        .where((c) => c['status'].toLowerCase() == 'pending')
         .length;
-    tCompleted = today.where((c) => c['status'] == 'completed').length;
-    tCancel = today.where((c) => c['status'] == 'cancelled').length;
+    tOngoing = today
+        .where(
+          (c) =>
+              ['ongoing', 'endprocessing'].contains(c['status'].toLowerCase()),
+        )
+        .length;
+    tCompleted = today
+        .where((c) => c['status'].toLowerCase() == 'completed')
+        .length;
+    tCancel = today
+        .where((c) => c['status'].toLowerCase() == 'cancelled')
+        .length;
     treg = today.length;
   }
 

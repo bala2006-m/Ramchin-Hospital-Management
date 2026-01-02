@@ -8,6 +8,8 @@ import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePag
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOutPatientQueuePage.dart';
 import '../../Mediacl_Staff/Pages/Medical/MedicalQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Page/GynPage.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/Page/scan_page.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/Queue/scan_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/AbdomenQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/CtScanQueuePage.dart';
@@ -31,6 +33,7 @@ import 'Accounts/AccountsDrawerPage.dart';
 import 'Accounts/ExpensePage.dart';
 import 'Accounts/FinancePage.dart';
 import 'Accounts/IncomeExpensePage.dart';
+import 'Accounts/accounts_report.dart';
 
 class AdminOpDashboardPage extends StatefulWidget {
   const AdminOpDashboardPage({super.key});
@@ -482,6 +485,19 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   ),
                                 );
                               }),
+
+                              _buildActionItem(
+                                Icons.receipt_long,
+                                "Report",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const AccountsReport(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                         ],
@@ -527,11 +543,27 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const XRayQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'X-Ray',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
                               ),
+
                               _buildActionItem(
                                 FontAwesomeIcons.brain, // MRI best match
                                 "MRI-Scan",
@@ -539,7 +571,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const MriScanQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'MRI-Scan',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -551,7 +598,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const CtScanQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'CT-Scan',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -571,7 +633,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const EcgQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'ECG',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -584,7 +661,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const PetScanQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'PET-Scan',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -596,7 +688,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const EegQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'EEG',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -616,7 +723,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const AbdomenQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'ABDOMEN',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -628,7 +750,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const GynQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'GYN',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -640,7 +777,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const DopplerQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'DOPPLER',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -661,8 +813,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          const ObstetricsQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'OBSTETRICS',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -675,7 +841,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const EchoQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'ECHO',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
@@ -688,8 +869,22 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          const UltrasoundQueuePage(),
+                                      builder: (_) => ScanQueue(
+                                        type: 'HF ULTRA SOUND',
+                                        pageBuilder:
+                                            ({
+                                              required Map<String, dynamic>
+                                              record,
+                                              required int mode,
+                                              required String type,
+                                            }) {
+                                              return ScanPage(
+                                                record: record,
+                                                mode: mode,
+                                                type: type,
+                                              );
+                                            },
+                                      ),
                                     ),
                                   );
                                 },
