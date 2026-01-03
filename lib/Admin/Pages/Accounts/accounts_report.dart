@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hospitrax/Admin/Pages/Accounts/widgets/accounts_report_pdf.dart';
 import 'package:hospitrax/Admin/Pages/Accounts/widgets/report_filter_widget.dart';
 import 'package:hospitrax/Services/payment_service.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/IncomeExpence_Service.dart';
 import '../../../Services/drawer_Service.dart';
@@ -75,7 +75,16 @@ class _AccountsReportState extends State<AccountsReport> {
   void initState() {
     super.initState();
     _loadHospitalInfo();
-    _loadPayments();
+    _initLoad();
+  }
+
+  Future<void> _initLoad() async {
+    await _loadPayments();
+
+    // 🔹 Default: current day report
+    final now = DateTime.now();
+
+    await _applyReportFilter(reportType: DateFilter.day, selectedDate: now);
   }
 
   DateTime parseAppDate(dynamic value) {
